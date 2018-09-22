@@ -121,6 +121,7 @@ class ProcessTrainData:
         self.lines, self.ratings = [],[] 
         self.process_docs()
         self.UNK = self.w2i["<unk>"]
+        self.i2w[self.UNK] = "<unk>"
         self.w2i = defaultdict(lambda: self.UNK, self.w2i)
         self.save_data() 
 
@@ -169,15 +170,49 @@ class ProcessTrainData:
             with open(self.save_name+".pickle", "wb") as outfile:
                 pickle.dump(Dataset, outfile) 
             
-            with open("w2i.josn","w") as outfile:
+            with open("w2i.json","w") as outfile:
                 json.dump(self.w2i, outfile, indent=4)
 
             with open("i2w.json", "w") as outfile:
                 json.dump(self.i2w, outfile, indent=4)
 
-# class ProcessTestData:
-#     def __init__():
+class ProcessTestData(ProcessTrainData):
 
+    def __init__(self,w2i_json, data_folder="aclImdb"):
+        
+        with open(w2i_json, "r") as infile:
+            self.w2i = json.load(infile)
+
+        #restore default property of the w2i    
+        self.w2i = defaultdict(int, self.w2i)
+        self.w2i = defaultdict(lambda: self.w2i["<unk>"], self.w2i)
+        self.data_type = "test"
+        self.save_name = "testDataset"
+        self.directory = [os.path.join(data_folder, self.data_type,"pos"),\
+                          os.path.join(data_folder, self.data_type,"neg")]
+
+        self.lines, self.ratings = [],[] 
+        self.process_docs()
+        self.save_data()
+        
+     # load doc, clean and return line of tokens
+    def doc_to_line(self,filename):
+        # load the doc
+        doc = load_doc(filename)
+        # clean doc
+        tokens = clean_doc(doc)
+        # filter by vocab
+        clean_token =[self.w2i[w] for w in tokens]
+               
+        return clean_token
+
+    # save train data
+    def save_data(self):
+            Dataset = list(zip(self.lines, self.ratings))
+            np.random.shuffle(Dataset)
+
+            with open(self.save_name+".pickle", "wb") as outfile:
+                pickle.dump(Dataset, outfile)    
 
         
 
@@ -209,5 +244,7 @@ vocab = load_doc(vocab_filename)
 vocab = vocab.split()
 vocab = set(vocab)
 
-Data = ProcessTrainData(vocab)
+# trainData = ProcessTrainData(vocab)
+json_file  = 'w2i.json'
+testData = ProcessTestData(json_file)
 
