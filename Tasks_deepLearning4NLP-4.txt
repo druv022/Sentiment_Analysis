@@ -1,0 +1,103 @@
+TASK 1
+
+Task Name: Part-of-speech tagging
+
+Input: A corpus that is annotated with part-of-speech tags. Each word in this corpus is assigned a tag.
+Output: A model that knows how to tag new sentences with part-of-speech tags.
+Use one of the datasets below for training and testing your models.
+
+Dataset 1: Annotated Dutch data: http://www.let.rug.nl/~vannoord/trees/
+This data includes Dutch sentences annotated with part-of-speech tags and parse trees. You only need to extract and use part-of-speech tags. Please look at the index.html file to learn about the data format. 
+
+Dataset 2: https://staff.fnwi.uva.nl/h.ghader/LDC99T42.zip
+This is English annotated data which also includes both part-of-speech tags and parse trees. This is part of Penn Treebank data for English. Note that you only need to extract and use part-of-speech tags. You have to use "/package/treebank_3/tagged" folder for this task. This is a password protected file. The password is "DL4NLP". This is a licensed data. Please do not share the data or the password with anyone out of the course and delete it after the completion of the project.
+
+Dataset 3: https://ufal.mff.cuni.cz/~straka/courses/npfl114/1718/czech-cac.zip
+This includes Czech sentences annotated with part-of-speech tags. The data is already split in training set, development set and test set. Note that the test data does not have gold tags and you cannot evaluate your method directly on the test data. You can instead use the development set to evaluate your model. 
+Each file in this dataset has three columns. the first column is the word and the last is the corresponding POS tag. There is a blank line after each sentence, marking the ned of the sentence.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TASK 2
+Task Name : Sentiment classification task
+
+Input : Set of documents describing IMDB reviews of movies
+
+Output : Prediction of the positive or negative labels for each review document. Based on this calculate accuracy of the used algorithm
+
+Description : 
+Given a document describing the review of a movie, identify whether the reviewer had a positive or negative sentiment about it and predict the corresponding label as positive or negative. The most common feature for each of the review is the text itself. 
+
+Data set URL:
+http://ai.stanford.edu/~amaas/data/sentiment/
+The given dataset is the commonly used IMDB dataset in the literature. The training set contains 50k documents (25k positive and 25k negative documents). You can sample from it according to memory constraints. The polarities are based on the ratings assigned by the reviewers. The dataset also contains the urls of the reviews that can be used to develop additional features. 
+
+The dataset also contain a test set. Further description is provided in the README file.
+ 
+Expected outcomes : 
+Implement and experiment with various neural network based solutions such as CNN, RNN and provide quantitative analysis about the relative performance of different models as well effect of varying data size
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TASK 3
+Task Name : Question classification
+
+Input : Set of sentences representing a question
+
+Output : A label for each of the question from ?k? given classes. 
+
+Task description : 
+Given a set of question sentence, predict a class label for each of the question selecting from ?6? coarse classes. Consider the words in the sentence and their linguistic properties such as part-of-speech for predicting the category. You can used additional linguistic tools such as pos-tagger , parse etc to annotate additional features. For more information refer to the paper : http://www.aclweb.org/anthology/C02-1150
+
+Dataset :
+http://cogcomp.org/Data/QA/QC/
+The link contains 5 labeled training set, each with varying training size and one test set. You are free to sample the the training set as per requirement and memory constraints. 
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TASK 4
+
+Task Name : Language modelling
+
+Input : Document containing raw English text
+
+Output : Perplexity score for the test set
+
+Task description : 
+Train a neural language model on the given training set and calculate the perplexity on a test-set. The goal of the problem is to fit a probabilistic model which assigns probabilities to sentences. It does so by predicting next words in a text given a history of previous words. For this purpose you will use the Penn Tree Bank (PTB) dataset, which is a popular benchmark for measuring the quality of these models, whilst being small and relatively fast to train. 
+
+Dataset: language model (Penn Treebank data set)
+https://github.com/townie/PTB-dataset-from-Tomas-Mikolov-s-webpage/tree/master/data
+Raw data for Penntreebank. Contains train, dev and test set files. The dataset is already preprocessed and contains overall 10000 different words, including the end-of-sentence marker and a special symbol (<unk>) for rare words.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TASK 5
+
+Task Name : Language Identification
+
+Input: Given an unknown paragraph written in one dominant language
+
+Output : Predict the predominant language of the document out of the possible classes 
+
+Task description:
+The main task is to identify the (predominant) language of a given text. The basic features would be to identify unicode values, characters in the text. However, note that in some cases other features may be required. For example, a sentence describing a movie or article in German may have a English dialogue or text snippets from other languages.
+
+Dataset:
+https://zenodo.org/record/841984/files/wili-2018.zip?download=1
+This is the WiLI-2018 benchmark dataset for monolingual written natural language identification. It is a dataset of short text extracts from Wikipedia. It contains 1000 paragraphs of 235 languages. You can sample the training set as per your requirement and memory constraints. Refer to https://arxiv.org/pdf/1801.07779.pdf for more details
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+TASK 6
+
+Task Name: Document classification
+
+Input: A collection of Reuters documents annotated with one or more tags out of a predefined list of named entities. Each tag describes the general topic of the page.
+Output: A model that knows how to classify a given Reuters article and annotate it with the correct labels.
+
+Task description:
+In this task you should use the content of Reuters documents as the input features to your model. Your model should learn to classify the pages based on these features.
+
+Dataset: https://www.kaggle.com/nltkdata/reuters/version/2
+ApteMod is a collection of 10,788 documents from the Reuters financial newswire service, partitioned into a training set with 7769 documents and a test set with 3019 documents.  
+In the ApteMod corpus, each document belongs to one or more categories.  There are 90 categories in the corpus.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
