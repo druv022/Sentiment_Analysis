@@ -175,7 +175,8 @@ class ProcessTrainData:
             with open("i2w.json", "w") as outfile:
                 json.dump(self.i2w, outfile, indent=4)
 
-
+# class ProcessTestData:
+#     def __init__():
 
 
         
@@ -184,23 +185,23 @@ class ProcessTrainData:
 
 
 # add all docs to vocab
-# vocab = Counter()
-# if not args.check_vocab:
-#     print("---------No vocab previously saved creating new one---------")
-#     print()
-#     vocab = TokenizeCorpus(vocab, "aclImdb/train/pos")
-#     vocab.process_docs()
-#     vocab = TokenizeCorpus(vocab.vocab, "aclImdb/train/neg")
-#     vocab.process_docs()
+vocab = Counter()
+if not args.check_vocab:
+    print("---------No vocab previously saved creating new one---------")
+    print()
+    vocab = TokenizeCorpus(vocab, "aclImdb/train/pos")
+    vocab.process_docs()
+    vocab = TokenizeCorpus(vocab.vocab, "aclImdb/train/neg")
+    vocab.process_docs()
     
     
-#     # keep tokens with > 5 occurrence
-#     min_occurane = 5
-#     tokens = [k for k,c in vocab.vocab.items() if c >= min_occurane]
-#     print(len(tokens))
+    # keep tokens with > 5 occurrence
+    min_occurane = 5
+    tokens = [k for k,c in vocab.vocab.items() if c >= min_occurane]
+    print(len(tokens))
 
-#     # save tokens to a vocabulary file
-#     save_list(tokens, 'vocab.txt')
+    # save tokens to a vocabulary file
+    save_list(tokens, 'vocab.txt')
 
 # load vocabulary
 vocab_filename = 'vocab.txt'
