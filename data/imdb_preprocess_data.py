@@ -15,13 +15,8 @@ train_path = "aclImdb/train"
 test_path  =  "aclImdb/test"
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-        '--check_vocab', type=str, help = 'saved vocab.txt', default=None)
 
 
-
-args = parser.parse_args()
 
 # save vocab file
 def save_list(lines, filename):
@@ -145,6 +140,7 @@ class ProcessTrainData:
        
         # walk through all files in the folder(pos, neg)
         for dataset in self.directory:
+            print(dataset)
             for filename in os.listdir(dataset):
                 # skip files that do not have the right extension
                 if not filename.endswith(".txt"):
@@ -219,11 +215,16 @@ class ProcessTestData(ProcessTrainData):
 
 
 
-# add all docs to vocab
-vocab = Counter()
+parser = argparse.ArgumentParser()
+parser.add_argument(
+        '--check_vocab', type=str, help = 'saved vocab.txt', default=None)
+args = parser.parse_args()
+
 if not args.check_vocab:
     print("---------No vocab previously saved creating new one---------")
     print()
+    # add all docs to vocab
+    vocab = Counter()
     vocab = TokenizeCorpus(vocab, "aclImdb/train/pos")
     vocab.process_docs()
     vocab = TokenizeCorpus(vocab.vocab, "aclImdb/train/neg")
@@ -244,7 +245,7 @@ vocab = load_doc(vocab_filename)
 vocab = vocab.split()
 vocab = set(vocab)
 
-# trainData = ProcessTrainData(vocab)
+trainData = ProcessTrainData(vocab)
 json_file  = 'w2i.json'
 testData = ProcessTestData(json_file)
 
