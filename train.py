@@ -25,6 +25,31 @@ def BatchIterator(data, batch_size, PAD):
     for i in range(0, len(data), batch_size):
         yield PadSequence(data[i:i+batch_size], PAD)
 
+def binary_accuracy(predictions, target):
+    """
+    Returns accuracy per batch, i.e. if you get 8/10 right, this returns 0.8, NOT 8
+    """
+
+    #round predictions to the closest integer
+    predictions = torch.round(F.sigmoid(predictions))
+    correct = (predictions == y).float() #convert into float for division 
+    acc = correct.sum()
+    return acc
+
+def evaluate(model, data_test, config, PAD, device):
+    
+    model.eval()
+    acc=0
+    with torch.no_grad():
+        for inputs, labels in BatchIterator(data_test, config.batch_size, PAD):
+            inputs, labels = torch.from_numpy(inputs).to(device),\
+                             torch.from_numpy(labels).to(device)
+            predictions = model(inputs)
+            acc+=binary_accuracy(predictions, labels)
+
+    print("Test Accuracy: {}".format(acc/len(data_test)))
+
+    return
     
 def train(config):  
 
@@ -58,6 +83,7 @@ def train(config):
         np.random.shuffle(data_train)
         updates=0
         epoch_loss = 0
+        
         for inputs, labels in BatchIterator(data_train, config.batch_size, PAD):
             
             updates += 1
@@ -73,10 +99,16 @@ def train(config):
             optimizer.step()
             epoch_loss+=loss.item()
            
-        print ('Epoch {}, Loss: {:.4f}' 
+        print ('Epoch {}, training loss: {:.4f}' 
                    .format(epochs+1,epoch_loss/updates))
 
-
+        #evaluate on the test set remember it's a test set 
+        evaluate(model, data_test, config, PAD, device)
+        model.train()
+        #TODO
+        # pretrianed emmbeddings
+        #add pads in embedding
+        #get h from last inputs
 
 
 
