@@ -7,7 +7,7 @@ import json
 import numpy as np 
 import pickle
 import torch.nn.functional as F
-from model import HAN
+from model_HAN import HAN
 from model_biRNN import BiRNN
 
 
