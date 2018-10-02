@@ -7,7 +7,7 @@ from collections import defaultdict
 import json
 import numpy as np 
 import pickle
-
+import torch.nn.functional as F
 
 def PadSequence(batch, PAD):
 
@@ -31,10 +31,10 @@ def binary_accuracy(predictions, target):
     """
 
     #round predictions to the closest integer
-    predictions = torch.round(F.sigmoid(predictions))
-    correct = (predictions == y).float() #convert into float for division 
+    predictions = torch.round(torch.sigmoid(predictions))
+    correct = (predictions.float() == target.float()) #convert into float for division 
     acc = correct.sum()
-    return acc
+    return acc.item()
 
 def evaluate(model, data_test, config, PAD, device):
     
@@ -53,6 +53,9 @@ def evaluate(model, data_test, config, PAD, device):
     
 def train(config):  
 
+
+    np.random.seed(42)
+    torch.manual_seed(42)
     #====================================
     with open(config.w2i, "r") as infile:
             w2i = json.load(infile)
@@ -70,10 +73,10 @@ def train(config):
        data_test = pickle.load(infile)
     
     #===========Device configuration=============
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
     
     model = BiRNN(len(w2i),config.embedding_dim, config.num_hidden, 
-                    config.num_layers, config.output_dim, config.dropout, device).to(device)
+                    config.num_layers, config.output_dim, config.dropout, device,PAD).to(device)
     optimizer = optim.Adam(model.parameters())
     criterion = nn.BCEWithLogitsLoss()
     
@@ -124,7 +127,7 @@ if __name__ == "__main__":
     parser.add_argument('--embedding_dim', type=int, default=100, help='Length of embedding dimension')
     parser.add_argument('--output_dim', type=int, default=1, help='Dimensionality of output sequence')
     parser.add_argument('--num_hidden', type=int, default=256, help='Number of hidden units in the model')
-    parser.add_argument('--num_layers', type=int, default=1, help = "Number of layers")
+    parser.add_argument('--num_layers', type=int, default=2, help = "Number of layers")
     parser.add_argument('--batch_size', type=int, default=64, help='Number of examples to process in a batch')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--max_norm', type=float, default=10.0)
