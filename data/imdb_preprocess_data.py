@@ -8,12 +8,13 @@ from nltk.stem import PorterStemmer
 import argparse
 import pickle
 import json
+import shutil
 
 np.random.seed(7)
-
+data_folder = "aclImdb"
 train_path = "aclImdb/train"
-test_path  =  "aclImdb/test"
-
+dev_path =   "aclImdb/dev"
+test_path  = "aclImdb/test"
 
 
 
@@ -104,12 +105,13 @@ class TokenizeCorpus():
 
 class ProcessTrainData:
 
-    def __init__(self, vocabulary, data_folder="aclImdb"):
+    def __init__(self, vocabulary, data_folder, train_size, d_type="train"):
 
         self.vocab = vocabulary
-        self.data_type = "train"
-        self.save_name = "trainDataset"
-        self.directory = [os.path.join(data_folder, self.data_type,"pos"),os.path.join(data_folder, self.data_type,"neg")]
+        self.data_folder = data_folder
+        self.save_name = "train_"+str(train_size)
+        self.train_size = train_size
+        self.directory = [os.path.join(data_folder, "pos"),os.path.join(data_folder, "neg")]
         self.w2i  = defaultdict(lambda: len(self.w2i))
         self.i2w = defaultdict(lambda: len(self.i2w))
         self.PAD = self.w2i["<pad>"]
@@ -137,7 +139,8 @@ class ProcessTrainData:
     
     # load all docs in a directory
     def process_docs(self):
-       
+        
+        print()
         # walk through all files in the folder(pos, neg)
         for dataset in self.directory:
             print(dataset)
@@ -166,15 +169,18 @@ class ProcessTrainData:
             with open(self.save_name+".pickle", "wb") as outfile:
                 pickle.dump(Dataset, outfile) 
             
-            with open("w2i.json","w") as outfile:
+            with open("w2i_"+str(self.train_size)+"_.json","w") as outfile:
                 json.dump(self.w2i, outfile, indent=4)
 
-            with open("i2w.json", "w") as outfile:
+            with open("i2w_"+str(self.train_size)+"_.json", "w") as outfile:
                 json.dump(self.i2w, outfile, indent=4)
 
+
+
+# ---------------------------Test Data---------------------------------
 class ProcessTestData(ProcessTrainData):
 
-    def __init__(self,w2i_json, data_folder="aclImdb"):
+    def __init__(self,w2i_json, data_folder, train_size, d_type="testDataset"):
         
         with open(w2i_json, "r") as infile:
             self.w2i = json.load(infile)
@@ -182,10 +188,12 @@ class ProcessTestData(ProcessTrainData):
         #restore default property of the w2i    
         self.w2i = defaultdict(int, self.w2i)
         self.w2i = defaultdict(lambda: self.w2i["<unk>"], self.w2i)
-        self.data_type = "test"
-        self.save_name = "testDataset"
-        self.directory = [os.path.join(data_folder, self.data_type,"pos"),\
-                          os.path.join(data_folder, self.data_type,"neg")]
+        self.data_folder = data_folder
+        self.save_name = d_type+"_"+str(train_size)
+        self.train_size = train_size
+       
+        self.directory = [os.path.join(data_folder, "pos"),\
+                          os.path.join(data_folder, "neg")]
 
         self.lines, self.ratings = [],[] 
         self.process_docs()
@@ -210,24 +218,61 @@ class ProcessTestData(ProcessTrainData):
             with open(self.save_name+".pickle", "wb") as outfile:
                 pickle.dump(Dataset, outfile)    
 
-        
-
-
-
-
+#=================================================================================
 parser = argparse.ArgumentParser()
+
 parser.add_argument(
-        '--check_vocab', type=str, help = 'saved vocab.txt', default=None)
+    '--train_size', type=int, help = 'training size to be considered in %', default =70)
+"""
+The given training data contains 12500 negative and postive reviews. First we split our data into 80:20 ratio as training and devSet.
+Now our training set is 80% of the given training data. Now in order to study the effect varying data sizes we will consider the chunk
+of trianing data from the 80% i.e 80 is the new 100 for us. 
+"""
 args = parser.parse_args()
 
-if not args.check_vocab:
+# first check if there is a folder for train in corresponding to that size
+train_new_path = os.path.join(train_path +"_"+ str(args.train_size))
+
+if not os.path.isdir(train_new_path):
+    
+    print("Creating the training data with given size")
+    print()
+    os.makedirs(train_new_path)
+
+    # copy [train_size]% of the data in this new path under positive and negative reviews
+    directory = [os.path.join(train_path, "pos"), os.path.join(train_path, "neg")]
+
+    for folder in directory:
+            
+        files  = os.listdir(folder)
+        np.random.shuffle(files)
+
+        no_files = int(len(files)*(args.train_size/100))
+        train_new_files = files[:no_files]
+
+        path = os.path.join(train_new_path, folder.split("/")[-1])
+
+        if not os.path.isdir(path):
+            os.makedirs(path)
+
+        for f_ in train_new_files:
+            shutil.copy(os.path.join(folder, f_), path)
+else:
+    
+    print("Data already exist with under: {}".format(train_new_path))
+
+
+# check if vocabulary exist for given data
+check_vocab = os.path.join(train_new_path+"_.txt")
+
+if not os.path.isfile(check_vocab):
     print("---------No vocab previously saved creating new one---------")
     print()
     # add all docs to vocab
     vocab = Counter()
-    vocab = TokenizeCorpus(vocab, "aclImdb/train/pos")
+    vocab = TokenizeCorpus(vocab, os.path.join(train_new_path, "pos"))
     vocab.process_docs()
-    vocab = TokenizeCorpus(vocab.vocab, "aclImdb/train/neg")
+    vocab = TokenizeCorpus(vocab.vocab, os.path.join(train_new_path, "neg"))
     vocab.process_docs()
     
     
@@ -237,15 +282,19 @@ if not args.check_vocab:
     print(len(tokens))
 
     # save tokens to a vocabulary file
-    save_list(tokens, 'vocab.txt')
+    save_list(tokens, check_vocab)
+else:
 
-# load vocabulary
-vocab_filename = 'vocab.txt'
+    print("vocab already exit")
+
+# # load vocabulary
+vocab_filename = check_vocab
 vocab = load_doc(vocab_filename)
 vocab = vocab.split()
 vocab = set(vocab)
 
-trainData = ProcessTrainData(vocab)
-json_file  = 'w2i.json'
-testData = ProcessTestData(json_file)
-
+trainData = ProcessTrainData(vocab, train_new_path, args.train_size)
+json_file  = "w2i_"+ str(args.train_size)+ "_.json"
+testData = ProcessTestData(json_file, test_path, args.train_size,'test')
+devData = ProcessTestData(json_file, dev_path, args.train_size,'val')
+# #==============================================================================

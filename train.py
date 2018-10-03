@@ -9,6 +9,10 @@ import numpy as np
 import pickle
 import torch.nn.functional as F
 
+
+
+
+
 def PadSequence(batch, PAD):
 
     sequences, labels = [],[] 
@@ -39,13 +43,14 @@ def binary_accuracy(predictions, target):
 def evaluate(model, data_test, config, PAD, device):
     
     model.eval()
-    acc=0
+    acc=0   
     with torch.no_grad():
         for inputs, labels in BatchIterator(data_test, config.batch_size, PAD):
             inputs, labels = torch.from_numpy(inputs).to(device),\
                              torch.from_numpy(labels).to(device)
             predictions = model(inputs)
             acc+=binary_accuracy(predictions, labels)
+            
 
     print("Test Accuracy: {}".format(acc/len(data_test)))
 
@@ -56,6 +61,10 @@ def train(config):
 
     np.random.seed(42)
     torch.manual_seed(42)
+
+
+
+
     #====================================
     with open(config.w2i, "r") as infile:
             w2i = json.load(infile)
@@ -73,10 +82,18 @@ def train(config):
        data_test = pickle.load(infile)
     
     #===========Device configuration=============
-    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+
+
+
+
+
+
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     
     model = BiRNN(len(w2i),config.embedding_dim, config.num_hidden, 
-                    config.num_layers, config.output_dim, config.dropout, device,PAD).to(device)
+                    config.num_layers, config.output_dim, config.dropout, device, PAD).to(device)
+    
+
     optimizer = optim.Adam(model.parameters())
     criterion = nn.BCEWithLogitsLoss()
     
@@ -101,6 +118,7 @@ def train(config):
             loss.backward()
             optimizer.step()
             epoch_loss+=loss.item()
+            
            
         print ('Epoch {}, training loss: {:.4f}' 
                    .format(epochs+1,epoch_loss/updates))
