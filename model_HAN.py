@@ -67,7 +67,7 @@ class Attention(nn.Module):
         self.tanh = nn.Tanh()
         self.softmax = nn.Softmax(dim=softmax_dim)
 
-        self.linear2 = nn.Linear(hidden_size, hidden_size, bias=False)
+        self.linear2 = nn.Linear(hidden_size, embedding_dim, bias=False)
         nn.init.xavier_normal_(self.linear2.weight.data)
 
     def forward(self, x):
@@ -93,11 +93,11 @@ class HAN(nn.Module):
 
         # Attention for word to sentence
         self.biRNN_word = BiRNN(vocab_size, embedding_dim, hidden_size, num_layers, dropout, device, PAD)
-        self.attention_word = Attention(hidden_size*2, hidden_size*2, softmax_dim=2)
+        self.attention_word = Attention(hidden_size*2, hidden_size, softmax_dim=2)
         
         # Attention for sentence to Doc
         self.biRNN_sentence = BiRNN(hidden_size, hidden_size*2, hidden_size, num_layers, dropout, device, PAD, embed_required=False)
-        self.attention_sentence = Attention(hidden_size*2, hidden_size*2, softmax_dim=1)
+        self.attention_sentence = Attention(hidden_size*2, hidden_size, softmax_dim=1)
 
         self.linear = nn.Linear(hidden_size*2, num_classes)
         nn.init.xavier_normal_(self.linear.weight.data)
