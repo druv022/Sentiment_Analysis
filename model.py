@@ -14,9 +14,8 @@ class BiRNN(nn.Module):
 
 
 
-        self.dropout = dropout
+        self.dropout = nn.Dropout(dropout)
         self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx = PAD)
-
         self.lstm = nn.LSTM(embedding_dim, hidden_size, num_layers, \
                     batch_first=True, bidirectional=True, dropout=dropout)
         self.fc = nn.Linear(hidden_size*2, num_classes)  # 2 for bidirection

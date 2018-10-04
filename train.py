@@ -9,10 +9,6 @@ import numpy as np
 import pickle
 import torch.nn.functional as F
 
-
-
-
-
 def PadSequence(batch, PAD):
 
     sequences, labels = [],[] 
@@ -52,9 +48,9 @@ def evaluate(model, data_test, config, PAD, device):
             acc+=binary_accuracy(predictions, labels)
             
 
-    print("Test Accuracy: {}".format(acc/len(data_test)))
+    # print("Test Accuracy: {}".format(acc/len(data_test)))
 
-    return
+    return acc/len(data_test)
     
 def train(config):  
 
@@ -62,10 +58,7 @@ def train(config):
     np.random.seed(42)
     torch.manual_seed(42)
 
-
-
-
-    #====================================
+   #====================================
     with open(config.w2i, "r") as infile:
             w2i = json.load(infile)
 
@@ -80,29 +73,31 @@ def train(config):
     
     with open(config.testDataset, "rb") as infile:
        data_test = pickle.load(infile)
-    
+
+    with open(config.devDataset, "rb") as infile:
+        data_val = pickle.load(infile)
     #===========Device configuration=============
 
-
-
-
-
-
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    
+    device = torch.device(config.device if torch.cuda.is_available() else 'cpu')
     model = BiRNN(len(w2i),config.embedding_dim, config.num_hidden, 
-                    config.num_layers, config.output_dim, config.dropout, device, PAD).to(device)
+            config.num_layers, config.output_dim, config.dropout, device, PAD).to(device)
     
-
-    optimizer = optim.Adam(model.parameters())
+    if config.pre_train:
+        with open(config.pre_train, "rb") as infile:
+                weight_matrix = pickle.load(infile)
+        weight_matrix = torch.from_numpy(weight_matrix)
+        model.embedding.load_state_dict({"weight": weight_matrix})
+        
+    optimizer = optim.Adam(model.parameters(), lr = config.learning_rate, weight_decay=0.0001)
     criterion = nn.BCEWithLogitsLoss()
-    
     #=================train=================== 
+    best_acc = 0
     for epochs in range(config.train_epochs):
         
         np.random.shuffle(data_train)
         updates=0
         epoch_loss = 0
+        accuracy = 0
         
         for inputs, labels in BatchIterator(data_train, config.batch_size, PAD):
             
@@ -118,21 +113,25 @@ def train(config):
             loss.backward()
             optimizer.step()
             epoch_loss+=loss.item()
-            
+            accuracy+=binary_accuracy(predictions, labels)
+                     
            
-        print ('Epoch {}, training loss: {:.4f}' 
-                   .format(epochs+1,epoch_loss/updates))
 
-        #evaluate on the test set remember it's a test set 
-        evaluate(model, data_test, config, PAD, device)
+        #evaluate on the validation set remember it's a test set
+        val_acc = evaluate(model, data_val, config, PAD, device)
+        
+        print ('Epoch {}| training loss: {:.4f}| training accuracy: {:.4f}| validation accuracy: {:4f}' 
+                   .format(epochs+1,epoch_loss/updates, accuracy/len(data_train), val_acc))
+        if val_acc > best_acc:
+            best_acc = val_acc
+            torch.save(model.state_dict(), "model_"+str(config.embedding_dim)+"_pth.tar")
         model.train()
-        #TODO
-        # pretrianed emmbeddings
-        #add pads in embedding
-        #get h from last inputs
 
-
-
+    print("Finished training, evaluating on test data....")
+    # calcualte accuracy on Test data
+    model.load_state_dict(torch.load("model_"+str(config.embedding_dim)+"_pth.tar"))
+    test_accuracy = evaluate(model, data_test, config, PAD, device)  
+    print("Test accuracy: {}".format(test_accuracy))
 
 
 if __name__ == "__main__":
@@ -148,13 +147,15 @@ if __name__ == "__main__":
     parser.add_argument('--num_layers', type=int, default=2, help = "Number of layers")
     parser.add_argument('--batch_size', type=int, default=64, help='Number of examples to process in a batch')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate')
-    parser.add_argument('--max_norm', type=float, default=10.0)
-    parser.add_argument('--w2i', type=str, default="data/w2i.json", help="word to index mapping")
-    parser.add_argument('--device', type=str, default="cuda:0", help="Training device 'cpu' or 'cuda:0'")
-    parser.add_argument('--train_epochs', type=int, default=5, help='Number of training epochs')
-    parser.add_argument('--trainDataset', type=str, default="data/trainDataset.pickle", help='pickle file for train')
-    parser.add_argument('--testDataset', type=str, default="data/testDataset.pickle", help='pickle file for train')
     parser.add_argument('--dropout', type=float, default=0.5, help='regularizer')
+    parser.add_argument('--max_norm', type=float, default=10.0)
+    parser.add_argument('--device', type=str, default="cuda:0", help="Training device 'cpu' or 'cuda:0'")
+    parser.add_argument('--pre_train', type=str, default=None, help="if given will initilize with pre-trained embeddings")    
+    parser.add_argument('--train_epochs', type=int, default=10, help='Number of training epochs')
+    parser.add_argument('--trainDataset', type=str, default="data/train_100.pickle", help='pickle file for train')
+    parser.add_argument('--testDataset', type=str, default="data/test_100.pickle", help='pickle file for train')
+    parser.add_argument('--devDataset', type=str, default="data/val_100.pickle", help='pickle file for train')
+    parser.add_argument('--w2i', type=str, default="data/w2i_100_.json", help="word to index mapping")
     
     config = parser.parse_args()
 
