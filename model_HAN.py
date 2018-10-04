@@ -8,14 +8,19 @@ class BiRNN(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.device = device
-        self.dropout = dropout
+
+        if num_layers > 1:
+            self.dropout = dropout
+        else:
+            self.dropout = 0.0
+
         self.embed_required = embed_required
         self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx = PAD)
         # self.lstm = nn.LSTM(embedding_dim, hidden_size, num_layers, \
-        #         batch_first=True, bidirectional=True, dropout=dropout)
+        #         batch_first=True, bidirectional=True, dropout=self.dropout)
         # self.init_weight(self.lstm.all_weights)
         self.gru = nn.GRU(embedding_dim, hidden_size, num_layers, \
-                batch_first=True, bidirectional=True, dropout=dropout)
+                batch_first=True, bidirectional=True, dropout=self.dropout)
         self.init_weight(self.gru.all_weights)
         self.tanh = nn.Tanh()
     
@@ -55,11 +60,13 @@ class BiRNN(nn.Module):
 # Attention Block
 class Attention(nn.Module):
     
-    def __init__(self,embedding_dim, hidden_size, softmax_dim=-1):
+    def __init__(self,embedding_dim, hidden_size, batch_size, num_sentence, softmax_dim=-1, device='cuda:0'):
         super(Attention, self).__init__()
         
         self.embedding_dim = embedding_dim
         self.hidden_size = hidden_size
+        self.batch_size = batch_size
+        self.num_sentence = num_sentence
 
         self.linear1 = nn.Linear(embedding_dim,hidden_size)
         nn.init.xavier_normal_(self.linear1.weight.data)
@@ -67,14 +74,27 @@ class Attention(nn.Module):
         self.tanh = nn.Tanh()
         self.softmax = nn.Softmax(dim=softmax_dim)
 
-        self.linear2 = nn.Linear(hidden_size, embedding_dim, bias=False)
-        nn.init.xavier_normal_(self.linear2.weight.data)
+        self.u_w = nn.Parameter(torch.Tensor(hidden_size,1)).to(device)
+        nn.init.normal_(self.u_w)
+
 
     def forward(self, x):
+        if len(x.shape) > 3:
+            b_size, s_size, w_size, e_size = x.shape
+            batch_u_w = torch.unsqueeze(torch.unsqueeze(torch.unsqueeze(self.u_w,0),0),0)
+            batch_u_w = batch_u_w.repeat(b_size,s_size,w_size,1,1)
+        elif len(x.shape) > 2:
+            b_size, s_size, e_size = x.shape
+            batch_u_w = torch.unsqueeze(torch.unsqueeze(self.u_w,0),0)
+            batch_u_w = batch_u_w.repeat(b_size,s_size,1,1)
+        else:
+            print("ERROR: input size mismatch")
 
         x = self.linear1(x)
         x = self.tanh(x)
-        x = self.linear2(x)
+        x = x.unsqueeze(-1)
+        x = torch.matmul(x.transpose(-2,-1),batch_u_w)
+        x = x.squeeze(-1)
         x = self.softmax(x)
 
         return x
@@ -82,7 +102,7 @@ class Attention(nn.Module):
 # Heirarchical Attention Network
 class HAN(nn.Module):
     
-    def __init__(self, vocab_size, embedding_dim, hidden_size, num_layers, num_classes, dropout, device, PAD):
+    def __init__(self, vocab_size, embedding_dim, hidden_size, num_layers, num_classes, dropout, device, PAD,  batch_size, num_sentence):
         super(HAN, self).__init__()
 
         self.embedding_dim = embedding_dim
@@ -90,14 +110,16 @@ class HAN(nn.Module):
         self.num_layers = num_layers
         self.device = device
         self.dropout = dropout
+        self.batch_size = batch_size
+        self.num_sentence = num_sentence
 
         # Attention for word to sentence
         self.biRNN_word = BiRNN(vocab_size, embedding_dim, hidden_size, num_layers, dropout, device, PAD)
-        self.attention_word = Attention(hidden_size*2, hidden_size, softmax_dim=2)
+        self.attention_word = Attention(hidden_size*2, hidden_size*2, batch_size, num_sentence, softmax_dim=2, device=device)
         
         # Attention for sentence to Doc
         self.biRNN_sentence = BiRNN(hidden_size, hidden_size*2, hidden_size, num_layers, dropout, device, PAD, embed_required=False)
-        self.attention_sentence = Attention(hidden_size*2, hidden_size, softmax_dim=1)
+        self.attention_sentence = Attention(hidden_size*2, hidden_size*2, batch_size, num_sentence, softmax_dim=1, device=device)
 
         self.linear = nn.Linear(hidden_size*2, num_classes)
         nn.init.xavier_normal_(self.linear.weight.data)
@@ -106,7 +128,7 @@ class HAN(nn.Module):
 
         sentence_b = self.biRNN_word(x)
         sentence = self.attention_word(sentence_b)
-        sentence = sentence * sentence_b
+        sentence = torch.mul(sentence,sentence_b)
         sentence = torch.sum(sentence,dim=2)
 
         doc_b = self.biRNN_sentence(sentence)
