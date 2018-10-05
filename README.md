@@ -2,12 +2,14 @@
 
 This Repository contains Code for our Project on "Nueral models for Sentiment Classification".
 
-Due to last moment conflict issues we are updating the README in the respective branch. The details of each of them are:
+*Note: Due to last moment conflict issues we are updating with **README in the respective branch**.* 
 
-tk_sentiment: Code for Bi-LSTM for Sentiment Analysis
+The details of the branch and the respective models are as follows:
 
-attention_model: Code for Hierarchial Attention model
+* tk_sentiment: **Bi-LSTM** 
 
-ionna : Code for our baseline approach
+* attention_model: **Hierarchial Attention model**
 
-vikrant: Code for our CNN based model for sentiment classification.
+* ionna : **Baseline** approach
+
+* vikrant: **CNN based model**
