@@ -15,12 +15,16 @@ le=0
 def load_glove_vector():
     glove_word_vector = pickle.load(
         open("pretrained_100d", "rb"))
-    return glove_word_vector
+    glove_word_vector1=np.zeros((35759,100))
+    for i in range(0,35759):
+        glove_word_vector1[i,:]=glove_word_vector[i,:]
+    glove_word_vector1=torch.from_numpy(glove_word_vector1)
+    return glove_word_vector1
 
 def save_model(model):
-    torch.save(model,"model_100_g.pkl")
+    torch.save(model,"model_150.pkl")
 def load_model():
-    model=torch.load("model_100_g.pkl")
+    model=torch.load("model_150.pkl")
     return model
 def accuracy(prediction,targets):
     accur = 0.0
@@ -44,8 +48,12 @@ def create_word_matrix(word_vector_dict,i2w_dict):
         word_matrix[int(key),:]=torch.from_numpy(word_vector_dict[i2w_dict[key]])
     return word_matrix
 
-def read_comments():
-    train_data_set_list = pickle.load(open("/home/vik1/Downloads/subj/dl_nlp/Sentiment_Analysis/data/trainDataset.pickle", "rb"))
+def read_comments(type):
+    train_data_set_list=None
+    if(type=="train"):
+       train_data_set_list = pickle.load(open("data/trainDataset.pickle", "rb"))
+    else:
+        train_data_set_list = pickle.load(open("data/testDataset.pickle", "rb"))
     return train_data_set_list
 
 def i2w():
@@ -62,7 +70,7 @@ def create_train_and_validation(lis):
     return training_list,validation_list
 def train():
     word_vector_dict=read_word_vector()
-    train_data_set_list=read_comments()
+    train_data_set_list=read_comments("train")
     shuffle(train_data_set_list)
     train_data_set_list,validation_list=create_train_and_validation(train_data_set_list)
     i2w_dict=i2w()
@@ -119,7 +127,7 @@ def train():
 def test():
     softmax=nn.Softmax(dim=1)
     word_vector_dict = read_word_vector()
-    train_data_set_list = read_comments()
+    train_data_set_list = read_comments("test")
     ##shuffle(train_data_set_list)
     ##train_data_set_list, validation_list = create_train_and_validation(train_data_set_list)
     ##i2w_dict = i2w()
@@ -192,8 +200,8 @@ def validate(validation_list,model,softmax):
     acc=acc/len(validation_list)
     print("Validation Accuracy "+str(acc))
 
-##test()
-train()
+test()
+##train()
 ##load_glove_vector()
 
 

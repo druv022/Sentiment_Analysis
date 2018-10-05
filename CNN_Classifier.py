@@ -6,7 +6,7 @@ class CNN(nn.Module):
     def __init__(self,weights_matrix):
         super(CNN, self).__init__()
         ##self.conv_2 = nn.Conv2d(1, 100, 2)
-        self.embeddings=nn.Embedding(35759,150)
+        self.embeddings=nn.Embedding(35759,100)
         ##self.embeddings.load_state_dict({'weight': weights_matrix})
         self.conv_3= nn.Conv2d(1, 100, 3)
         self.conv_4 = nn.Conv2d(1, 100, 4)
@@ -20,7 +20,7 @@ class CNN(nn.Module):
         ##y_2 = (torch.tanh(self.conv_2(x)))
         ##y_2_max=self.find_max(y_2)
         embed=self.embeddings(x)
-        input=embed.view(1,1,embed.shape[2],150)
+        input=embed.view(1,1,embed.shape[2],100)
         y_3 = (F.relu(self.conv_3(input)))
         y_3_max = self.find_max(y_3)
         y_4 = (F.relu(self.conv_4(input)))

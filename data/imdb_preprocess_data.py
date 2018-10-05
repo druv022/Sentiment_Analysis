@@ -229,7 +229,7 @@ class ProcessTestData(ProcessTrainData):
         self.w2i = defaultdict(int, self.w2i)
         self.w2i = defaultdict(lambda: self.w2i["<unk>"], self.w2i)
         self.data_type = ""
-        self.save_name = "trainDataset"
+        self.save_name = "testDataset"
         self.directory = [os.path.join(data_folder, self.data_type, "pos"), \
                           os.path.join(data_folder, self.data_type, "neg")]
 
