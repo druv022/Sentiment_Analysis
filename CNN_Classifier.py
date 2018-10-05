@@ -8,9 +8,9 @@ class CNN(nn.Module):
         ##self.conv_2 = nn.Conv2d(1, 100, 2)
         self.embeddings=nn.Embedding(35759,100)
         ##self.embeddings.load_state_dict({'weight': weights_matrix})
-        self.conv_3= nn.Conv2d(1, 100, 3)
-        self.conv_4 = nn.Conv2d(1, 100, 4)
-        self.conv_5 = nn.Conv2d(1, 100, 5)
+        self.conv_3= nn.Conv2d(1, 100, (3,100))
+        self.conv_4 = nn.Conv2d(1, 100, (4,100))
+        self.conv_5 = nn.Conv2d(1, 100, (5,100))
         self.linear=nn.Linear(300,2)
         self.dropout = nn.Dropout(0.5)
 
