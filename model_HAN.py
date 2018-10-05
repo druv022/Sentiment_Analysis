@@ -124,6 +124,8 @@ class HAN(nn.Module):
         self.linear = nn.Linear(hidden_size*2, num_classes)
         nn.init.xavier_normal_(self.linear.weight.data)
 
+        self.dropout = nn.Dropout(p=dropout)
+
     def forward(self, x):
 
         sentence_b = self.biRNN_word(x)
@@ -136,6 +138,7 @@ class HAN(nn.Module):
         doc = doc * doc_b
         doc = torch.sum(doc,dim=1)
 
+        out = self.dropout(doc)
         out = self.linear(doc)
 
         return out.squeeze(-1)

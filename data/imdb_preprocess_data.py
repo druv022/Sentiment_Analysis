@@ -170,7 +170,6 @@ class ProcessTrainData:
     
     # load all docs in a directory
     def process_docs(self):
-       
         # walk through all files in the folder(pos, neg)
         for dataset in self.directory:
             for filename in os.listdir(dataset):
@@ -192,25 +191,25 @@ class ProcessTrainData:
                     self.ratings.append(1)
                 else:
                     self.ratings.append(0)
-        
+
     # save train data
     def save_data(self):
-            Dataset = list(zip(self.lines ,self.ratings))
-            np.random.shuffle(Dataset)
+        Dataset = list(zip(self.lines ,self.ratings))
+        np.random.shuffle(Dataset)
 
-            if args.sentences:
-                add_name = '_s'
-            else:
-                add_name = ''
+        if args.sentences:
+            add_name = '_s'
+        else:
+            add_name = ''
 
-            with open(self.save_name+add_name+".pickle", "wb") as outfile:
-                pickle.dump(Dataset, outfile) 
-            
-            with open("w2i_"+str(self.train_size)+add_name+".json","w") as outfile:
-                json.dump(self.w2i, outfile, indent=4)
+        with open(self.save_name+add_name+".pickle", "wb") as outfile:
+            pickle.dump(Dataset, outfile) 
+        
+        with open("w2i_"+str(self.train_size)+add_name+".json","w") as outfile:
+            json.dump(self.w2i, outfile, indent=4)
 
-            with open("i2w_"+str(self.train_size)+add_name+".json", "w") as outfile:
-                json.dump(self.i2w, outfile, indent=4)
+        with open("i2w_"+str(self.train_size)+add_name+".json", "w") as outfile:
+            json.dump(self.i2w, outfile, indent=4)
 
 # -------------------------------Test Data----------------------------------------------
 class ProcessTestData(ProcessTrainData):
@@ -305,59 +304,59 @@ if __name__ == "__main__":
     # first check if there is a folder for train in corresponding to that size
     train_new_path = os.path.join(train_path +"_"+ str(args.train_size))
 
-    # if not os.path.isdir(train_new_path):
+    if not os.path.isdir(train_new_path):
         
-    #     print("Creating the training data with given size")
-    #     print()
-    #     os.makedirs(train_new_path)
+        print("Creating the training data with given size")
+        print()
+        os.makedirs(train_new_path)
 
-    #     # copy [train_size]% of the data in this new path under positive and negative reviews
-    #     directory = [os.path.join(train_path, "pos"), os.path.join(train_path, "neg")]
+        # copy [train_size]% of the data in this new path under positive and negative reviews
+        directory = [os.path.join(train_path, "pos"), os.path.join(train_path, "neg")]
 
-    #     for folder in directory:
+        for folder in directory:
                 
-    #         files  = os.listdir(folder)
-    #         np.random.shuffle(files)
+            files  = os.listdir(folder)
+            np.random.shuffle(files)
 
-    #         no_files = int(len(files)*(args.train_size/100))
-    #         train_new_files = files[:no_files]
+            no_files = int(len(files)*(args.train_size/100))
+            train_new_files = files[:no_files]
 
-    #         path = os.path.join(train_new_path, folder.split("/")[-1])
+            path = os.path.join(train_new_path, folder.split("/")[-1])
 
-    #         if not os.path.isdir(path):
-    #             os.makedirs(path)
+            if not os.path.isdir(path):
+                os.makedirs(path)
 
-    #         for f_ in train_new_files:
-    #             shutil.copy(os.path.join(folder, f_), path)
-    # else:
+            for f_ in train_new_files:
+                shutil.copy(os.path.join(folder, f_), path)
+    else:
         
-    #     print("Data already exist with under: {}".format(train_new_path))
+        print("Data already exist with under: {}".format(train_new_path))
 
 
-    # # check if vocabulary exist for given data
+    # check if vocabulary exist for given data
     check_vocab = os.path.join(train_new_path+"_.txt")
 
-    # if not os.path.isfile(check_vocab):
-    #     print("---------No vocab previously saved creating new one---------")
-    #     print()
-    #     # add all docs to vocab
-    #     vocab = Counter()
-    #     vocab = TokenizeCorpus(vocab, os.path.join(train_new_path, "pos"))
-    #     vocab.process_docs()
-    #     vocab = TokenizeCorpus(vocab.vocab, os.path.join(train_new_path, "neg"))
-    #     vocab.process_docs()
+    if not os.path.isfile(check_vocab):
+        print("---------No vocab previously saved creating new one---------")
+        print()
+        # add all docs to vocab
+        vocab = Counter()
+        vocab = TokenizeCorpus(vocab, os.path.join(train_new_path, "pos"))
+        vocab.process_docs()
+        vocab = TokenizeCorpus(vocab.vocab, os.path.join(train_new_path, "neg"))
+        vocab.process_docs()
         
         
-    #     # keep tokens with > 5 occurrence
-    #     min_occurane = 5
-    #     tokens = [k for k,c in vocab.vocab.items() if c >= min_occurane]
-    #     print(len(tokens))
+        # keep tokens with > 5 occurrence
+        min_occurane = 5
+        tokens = [k for k,c in vocab.vocab.items() if c >= min_occurane]
+        print(len(tokens))
 
-    #     # save tokens to a vocabulary file
-    #     save_list(tokens, check_vocab)
-    # else:
+        # save tokens to a vocabulary file
+        save_list(tokens, check_vocab)
+    else:
 
-    #     print("vocab already exit")
+        print("vocab already exit")
 
     # # load vocabulary
     vocab_filename = check_vocab
@@ -365,7 +364,7 @@ if __name__ == "__main__":
     vocab = vocab.split()
     vocab = set(vocab)
 
-    # trainData = ProcessTrainData(vocab, train_new_path, args.train_size)
+    trainData = ProcessTrainData(vocab, train_new_path, args.train_size)
     if args.sentences:
         add_name = 's'
     else:

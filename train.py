@@ -13,6 +13,7 @@ import os
 import shutil
 import matplotlib.pyplot as plt
 import sklearn.metrics as skl
+from random import shuffle
 
 def padSequence(batch, PAD):
 
@@ -68,9 +69,10 @@ def roc_metric(model_pred, labels, file_name="ROC_data.pkl"):
     pred = torch.sigmoid(model_pred)
 
     fpr, tpr, _ = skl.roc_curve(labels,pred,pos_label = 1)
+    auc = skl.roc_auc_score(labels,pred)
 
     with open(file_name,'wb') as f:
-        pickle.dump([fpr,tpr,labels],f)
+        pickle.dump([fpr,tpr,auc],f,protocol=2)
 
     plt.plot(fpr, tpr,'r')
     plt.grid()
@@ -80,7 +82,7 @@ def roc_metric(model_pred, labels, file_name="ROC_data.pkl"):
     plt.show()
 
 
-def evaluate(model, data_test, config, PAD, device, epochs):
+def evaluate(model, data_test, config, PAD, device, roc=False):
     
     model.eval()
     acc=0
@@ -100,13 +102,14 @@ def evaluate(model, data_test, config, PAD, device, epochs):
 
     print("Test Accuracy: {}".format(acc/len(data_test)))
 
-    predictions = torch.stack(pred_list[0:-1],dim=1)
-    predictions = predictions.view(predictions.numel())
-    predictions = torch.cat((predictions, pred_list[-1]))
-    labels = torch.stack(label_list[0:-1],dim=1)
-    labels = labels.view(labels.numel())
-    labels = torch.cat((labels, label_list[-1]))
-    roc_metric(predictions,labels)
+    if roc:
+        predictions = torch.stack(pred_list[0:-1],dim=1)
+        predictions = predictions.view(predictions.numel())
+        predictions = torch.cat((predictions, pred_list[-1]))
+        labels = torch.stack(label_list[0:-1],dim=1)
+        labels = labels.view(labels.numel())
+        labels = torch.cat((labels, label_list[-1]))
+        roc_metric(predictions,labels)
 
     return acc/len(data_test)
 
@@ -139,6 +142,12 @@ def train(config):
 
     with open(config.valDataset, "rb") as infile:
         data_val = pickle.load(infile)
+
+    if config.pretrained:
+        if os.path.exists(config.pretrained):
+            with open(config.pretrained,'rb') as f:
+                pretrained = pickle.load(f)
+
     
     #===========Device configuration=============
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -149,22 +158,25 @@ def train(config):
     else:
         model = BiRNN(len(w2i),config.embedding_dim, config.num_hidden, 
                     config.num_layers, config.output_dim, config.dropout, device, PAD).to(device)
+
+    if config.pretrained:
+        model.biRNN_word.embedding.weight.data = torch.Tensor(pretrained).to(device)
     
-    optimizer = optim.Adam(model.parameters())
-    # optimizer = optim.SGD(model.parameters(), lr=config.learning_rate, momentum=0.9)
+    optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
+
     criterion = nn.BCEWithLogitsLoss()
     
     # Learning rate scheduler
     # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=config.learning_rate_step, gamma=config.learning_rate_decay)
 
-    # if config.resume:
-    #     if os.path.isfile(config.resume):
-    #         print("Loading checkpoint '{}'".format(config.resume))
-    #         checkpoint = torch.load(config.resume)
-    #         model.load_state_dict(checkpoint['state_dict'])
-    #         optimizer.load_state_dict(checkpoint['optimizer'])
-    #         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
-    #         print("Checkpoint loaded '{}', steps {}".format(config.resume))
+    if config.resume:
+        if os.path.isfile(config.resume):
+            print("Loading checkpoint '{}'".format(config.resume))
+            checkpoint = torch.load(config.resume)
+            model.load_state_dict(checkpoint['state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+            print("Checkpoint loaded '{}'".format(config.resume))
     
     best_accuracy = 0.0
     loss_app = []
@@ -200,10 +212,11 @@ def train(config):
             loss_app.append(epoch_loss/updates)
 
         # lr_scheduler.step()
-        #evaluate on the test set remember it's a test set 
-        accuracy = evaluate(model, data_train, config, PAD, device, epochs)
-        accuracy = evaluate(model, data_test, config, PAD, device, epochs)
-        accuracy = evaluate(model, data_val, config, PAD, device, epochs)
+        #evaluate on the test set remember it's a test set
+        print("Training set accuracy:")
+        accuracy = evaluate(model, data_train, config, PAD, device)
+        print("Validation set accuracy:")
+        accuracy = evaluate(model, data_val, config, PAD, device)
 
         acc_app.append(accuracy)
 
@@ -218,16 +231,9 @@ def train(config):
                 # 'lr_scheduler':lr_scheduler.state_dict(),
                 'accuracy': accuracy
             }, is_best)
-
-        #TODO
-        # pretrianed emmbeddings
-        #add pads in embedding
-        #get h from last inputs
-
-    plt.plot(loss_app)
-    plt.grid()
-    plt.show()
-
+            # Test accuracy evaluated on the best model:
+            print("Test set accuracy:")
+            accuracy = evaluate(model, data_test, config, PAD, device)
 
 
 if __name__ == "__main__":
@@ -237,7 +243,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Model params
-    parser.add_argument('--embedding_dim', type=int, default=200, help='Length of embedding dimension')
+    parser.add_argument('--embedding_dim', type=int, default=300, help='Length of embedding dimension')
     parser.add_argument('--output_dim', type=int, default=1, help='Dimensionality of output sequence')
     parser.add_argument('--num_hidden', type=int, default=150, help='Number of hidden units in the model')
     parser.add_argument('--num_layers', type=int, default=2, help = "Number of layers")
@@ -252,12 +258,13 @@ if __name__ == "__main__":
     parser.add_argument('--valDataset', type=str, default="data/val_100_s.pickle", help='pickle file for validation') # Default: data/testDataset.pickle
     parser.add_argument('--w2i', type=str, default="data/w2i_100_s.json", help="word to index mapping") # Default: data/w2i.json
     parser.add_argument('--sentences', action='store_false', help='Process data hierarchically, doc=>sentences=>words') # Default: action=store_true
-    parser.add_argument('--num_words', type=int, default=60, help='Maximum number of words in a sentence')
-    parser.add_argument('--num_sentences', type=int, default=30, help='Maximum number of sentences in a review')
+    parser.add_argument('--num_words', type=int, default=40, help='Maximum number of words in a sentence')
+    parser.add_argument('--num_sentences', type=int, default=20, help='Maximum number of sentences in a review')
     parser.add_argument('--model', type=str, choices=['BiRNN','HAN'], default='HAN', help='Model for training, BiRNN(default) or HAN')
     parser.add_argument('--learning_rate_decay', type=float, default=0.96, help='Learning rate decay fraction') #0.96
     parser.add_argument('--learning_rate_step', type=int, default=1, help='Learning rate decay epoch')
     parser.add_argument('--resume', type=str, default='checkpoint.pth.tar', help="Path to latest checkpoint")
+    parser.add_argument('--pretrained', type=str, default='/media/druv022/Data1/NLP_data/glove.6B/pretrained_300d', help="Path to latest checkpoint") #default: None
     
     config = parser.parse_args()
 
