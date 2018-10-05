@@ -2,7 +2,7 @@
 
 This Repository contains Code for our Project on "Nueral models for Sentiment Classification".
 
-*Note: Due to last moment conflict issues we are updating with **README in the respective branch**.* 
+*Note: Due to last moment conflict issues we have updated with **README in the respective branch**.* 
 
 The details of the branch and the respective models are as follows:
 
