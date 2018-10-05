@@ -10,4 +10,4 @@ attention_model: Code for Hierarchial Attention model
 
 ionna : Code for our baseline approach
 
-vikrant: Code for our CNN based model for sentimetn classification.
+vikrant: Code for our CNN based model for sentiment classification.
