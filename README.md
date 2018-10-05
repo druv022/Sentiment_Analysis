@@ -1,7 +1,7 @@
 # Bi-LSTM Model for Sentiment analysis
 
 ## Dataset
-We have uploaded the data folder consisting training, testing and validation data (all are pickle files) as well as or vocab json namely w2i_100.json here https://drive.google.com/drive/folders/1UcNlWvyjgBlYb6ZanT-KRAtHj6o2TacL?usp=sharing. 
+We have uploaded the data folder consisting training, testing and validation data (all are pickle files) as well as or vocab json namely w2i_100.json here https://drive.google.com/drive/folders/1UcNlWvyjgBlYb6ZanT-KRAtHj6o2TacL?usp=sharing . 
 
 Regarding the data folder in the branch it contains pre-processing scripts for the given IMDB data, wg=hich basically creates the pickle file whcih is shared above.
 
