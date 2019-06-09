@@ -1,4 +1,4 @@
-# HAN Model for Sentiment analysis
+# Hierarchical Attention Network Model for Sentiment analysis
 
 ## Dataset
 The *data* folder contains pre-processing scripts for the IMDB dataset and the required files.
